@@ -1,0 +1,50 @@
+services:
+  nemotron3super:
+    container_name: nemotron3super
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.multi
+      target: release
+      args:
+        TRT_LLM_VER: ${TRT_LLM_VER}
+    ipc: host
+    ulimits:
+      stack: 67108864
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${NEMOTRON_DATA_DIR}:/data
+    networks:
+      - llm-net
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command:
+      - trtllm-serve
+      - /data/super_fp4/
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --max_batch_size
+      - "1"
+      - --max_num_tokens
+      - "80000"
+      - --max_seq_len
+      - "80000"
+      - --trust_remote_code
+      - --reasoning_parser
+      - nano-v3
+      - --tool_parser
+      - qwen3_coder
+      - --extra_llm_api_options
+      - /data/super_fp4/y.yaml
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net
